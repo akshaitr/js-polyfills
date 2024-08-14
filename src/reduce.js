@@ -1,7 +1,4 @@
 function reduce(callback, initialValue) {
-  if (!Array.isArray(this)) {
-    return new TypeError("reduce is not a function on the given object");
-  }
   if (typeof callback !== "function") {
     return new TypeError("callback is not a function");
   }

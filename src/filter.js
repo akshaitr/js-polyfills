@@ -1,7 +1,4 @@
 function filter(callback) {
-  if (!Array.isArray(this)) {
-    return new TypeError("filter is not a function on the given object");
-  }
   if (typeof callback !== "function") {
     return new TypeError("callback is not a function");
   }
