@@ -4,40 +4,41 @@ function promise(executor) {
   let isCalled = false;
 
   let value;
+  let error;
   let onResolve;
   let onReject;
 
   function resolve(val) {
-    value = val;
     isFullfilled = true;
-    if (typeof onResolve === "function") {
+    value = val;
+    if (typeof onResolve === "function" && !isCalled) {
       onResolve(val);
       isCalled = true;
     }
   }
 
-  function reject(val) {
-    value = val;
+  function reject(err) {
     isRejected = true;
-    if (typeof onReject === "function") {
-      onReject(val);
+    error = err;
+    if (typeof onReject === "function" && !isCalled) {
+      onReject(err);
       isCalled = false;
     }
   }
 
-  this.then = function (callback) {
-    onResolve(callback);
-    if (isFullfilled && !isCalled) {
+  this.then = function (thenHandler) {
+    onResolve = thenHandler;
+    if (!isCalled && isFullfilled) {
       onResolve(value);
       isCalled = true;
     }
     return this;
   };
 
-  this.catch = function (callback) {
-    onReject(callback);
-    if (isRejected && !isCalled) {
-      onReject(value);
+  this.catch = function (catchHandler) {
+    onReject = catchHandler;
+    if (!isCalled && isRejected) {
+      onReject(error);
       isCalled = true;
     }
     return this;
