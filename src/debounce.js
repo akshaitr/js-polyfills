@@ -4,7 +4,7 @@ function debounce(callback, delay) {
     if (timer) {
       clearTimeout(timer);
     }
-    setTimeout(() => {
+    timer = setTimeout(() => {
       callback(...args);
     }, delay);
   };
