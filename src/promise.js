@@ -1,54 +1,57 @@
 function promise(executor) {
-  let isFullfilled = false;
-  let isRejected = false;
-  let isCalled = false;
-
+  let state = 'pending';
   let value;
-  let error;
-  let onResolve;
-  let onReject;
+  let handlers = [];
 
   function resolve(val) {
-    isFullfilled = true;
+    if (state !== 'pending') return;
+    state = 'fulfilled';
     value = val;
-    if (typeof onResolve === "function" && !isCalled) {
-      onResolve(val);
-      isCalled = true;
-    }
+    execute();
   }
 
   function reject(err) {
-    isRejected = true;
-    error = err;
-    if (typeof onReject === "function" && !isCalled) {
-      onReject(err);
-      isCalled = false;
-    }
+    if (state !== 'pending') return;
+    state = 'rejected';
+    value = err;
+    execute();
   }
 
-  this.then = function (thenHandler) {
-    onResolve = thenHandler;
-    if (!isCalled && isFullfilled) {
-      onResolve(value);
-      isCalled = true;
-    }
-    return this;
+  function execute() {
+    if (state === 'pending') return;
+    // Guarantee asynchronous execution via microtask
+    queueMicrotask(() => {
+      handlers.forEach((h) => {
+        const cb = state === 'fulfilled' ? h.onFulfilled : h.onRejected;
+        if (!cb) {
+          (state === 'fulfilled' ? h.resolve : h.reject)(value);
+          return;
+        }
+        try {
+          const res = cb(value);
+          h.resolve(res);
+        } catch (err) {
+          h.reject(err);
+        }
+      });
+      handlers = [];
+    });
+  }
+
+  this.then = function (onFulfilled, onRejected) {
+    return new MyPromise((res, rej) => {
+      handlers.push({ onFulfilled, onRejected, resolve: res, reject: rej });
+      execute();
+    });
   };
 
-  this.catch = function (catchHandler) {
-    onReject = catchHandler;
-    if (!isCalled && isRejected) {
-      onReject(error);
-      isCalled = true;
-    }
-    return this;
+  this.catch = function (onRejected) {
+    return this.then(null, onRejected);
   };
 
   try {
     executor(resolve, reject);
-  } catch (error) {
-    reject(error);
+  } catch (err) {
+    reject(err);
   }
 }
-
-export default promise;
