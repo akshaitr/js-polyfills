@@ -1,4 +1,4 @@
-function promise(executor) {
+function MyPromise(executor) {
   let state = 'pending';
   let value;
   let handlers = [];
